@@ -88,8 +88,9 @@ import json
 from pdf2image import convert_from_path
 
 LLM_LIST = [
-    "meta-llama/Llama-3.2-1B-Instruct",
-    'meta-llama/Llama-3.2-3B-Instruct',
+    f"{home_dir}/shared_space/models/MODELS/meta_llama_Llama_3p2_1B_Instruct",
+    f"{home_dir}/shared_space/models/MODELS/Llama_3p1_8B_Instruct/",
+    f"{home_dir}/shared_space/models/MODELS/Llama_3p2_3B_Instruct/",
 ]
 
 # JavaScript for Auto-Scroll
@@ -2973,6 +2974,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
     def __init__(self, assistant_bot, 
                  uname="user",
                  embedding_model_name = "sentence-transformers/all-MiniLM-L6-v2",
+                 current_store = "your domain",
                  **kwargs):
         super().__init__(assistant_bot=assistant_bot, 
                          uname=uname,
@@ -2984,7 +2986,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
         self.chunk_overlap = 200
         self.k=3
         self.min_score=20
-        self.VECTOR_STORE_LIST = ["your domain",]
+        self.VECTOR_STORE_LIST = [current_store,]
         
 
     def load_llm(self, llm_name, **kwargs):
@@ -2995,8 +2997,15 @@ class RAGWorkshopUI(BasicGradioAssistant):
         """
             Can be used to load an new LLM assistant based on the provided type
         """
-        
-        self.assistant_bot = AMAS_RAG_Assistant(llm_name, **kwargs)
+        knexus_mngr = self.assistant_bot.knexus_mngr
+        self.assistant_bot = AMAS_RAG_Assistant(llm_name, 
+                                                hf_login=False, 
+                                                top_k=self.assistant_bot.top_k,
+                                                top_p=self.assistant_bot.top_p,
+                                                temperature=self.assistant_bot.temp,
+                                                max_new_tokens=self.assistant_bot.max_new_tokens,
+                                                max_tokens=self.assistant_bot.max_tokens,
+                                                **kwargs)
         self.assistant_bot.knexus_mngr = knexus_mngr
 
     def load_vectorstore(self, name):
@@ -3016,7 +3025,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
             self.chunk_overlap=chunk_overlap
         if embedding_model_name:
             self.embedding_model_name = embedding_model_name
-        self.assistant_bot.knexus_mngr.process_pdfs_to_vector_store_and_embeddings(self, 
+        self.assistant_bot.knexus_mngr.process_pdfs_to_vector_store_and_embeddings( 
                             pdf_paths, 
                             embedding_model_name=self.embedding_model_name, 
                             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap, 
@@ -3040,12 +3049,15 @@ class RAGWorkshopUI(BasicGradioAssistant):
     
     def upload_and_create_vectorstore(self, file):
         new_vs_name = self.create_vectorstore_from_pdfs(file.name)
-        if new_vs_name not in VECTOR_STORE_LIST:
-            VECTOR_STORE_LIST.append(new_vs_name)
-        return gr.Dropdown.update(choices=VECTOR_STORE_LIST, value=new_vs_name), f"Created new store: {new_vs_name}"
+        if new_vs_name not in self.VECTOR_STORE_LIST:
+            self.VECTOR_STORE_LIST.append(new_vs_name)
+        return gr.Dropdown.update(choices=self.VECTOR_STORE_LIST, value=new_vs_name), f"Created new store: {new_vs_name}"
 
     def update_params(self, chunk_size, k, min_similarity, temperature, top_k, top_p, max_tokens):
         self.chunk_size=chunk_size
+        self.assistant_bot.update_top_k(top_k)
+        self.assistant_bot.update_top_p(top_p)
+        self.assistant_bot.update_temperature(temperature)
         self.k=k
         self.min_score=min_similarity
         self.temp=temperature
@@ -3064,7 +3076,8 @@ class RAGWorkshopUI(BasicGradioAssistant):
             max_tokens=max_tokens
         )
 
-        self.rag_mode = True if rag_mode == "RAG Enabled" else False
+        self.assistant_bot.rag_mode = True if rag_mode == "RAG Enabled" else False
+        
         response = self.assistant_bot.generate_rag_response(user_input)
         # if rag_mode == "RAG Enabled":
         #     answer, debug = self.query(user_input)
@@ -3089,7 +3102,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
                     with gr.Row():
                         rag_mode_radio = gr.Radio(   # ✅ Fixed indent!
                             choices=["RAG Enabled", "RAG Disabled"],
-                            value="RAG Enabled",
+                            value="RAG Disabled",
                             label="RAG Mode"
                         )
 
@@ -3113,6 +3126,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
                     user_input = gr.Textbox(
                         placeholder="Type your question here & press Enter...",
                         label="Your Prompt",
+                        submit_btn=True,
                         show_label=False
                     )
                     debug_output = gr.Textbox(label="Debug Info", interactive=False)

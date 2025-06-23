@@ -854,6 +854,7 @@ class AMAS_Assistant:
         return
     
     def update_top_k(self, new_top_k):
+        new_top_k = int(new_top_k)
         if new_top_k <= 0:
             self.top_k=None
             self.top_p=None
@@ -869,6 +870,7 @@ class AMAS_Assistant:
     
     def update_max_new_tokens(self, max_new_tokens):
         self.max_new_tokens = max_new_tokens
+        self.max_tokens = max_new_tokens
     
     def update_generation_config(self, **kwargs):
         """
