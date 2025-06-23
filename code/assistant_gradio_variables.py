@@ -14,7 +14,6 @@ import inspect
 # set up some environment variables
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 # define the OPENAI_KEY for use in OPENAI based model if needed
-os.environ["OPENAI_KEY"] = "dummykey"
 
 os.environ['NEO4J_URL'] = "neo4j+s://viridian.ise.utk.edu:7687"
 os.environ['NEO4J_PWD'] = "viridianneo4j"
