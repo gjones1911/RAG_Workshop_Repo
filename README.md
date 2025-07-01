@@ -3,11 +3,11 @@ A small sample of code to explore how RAG works and play around. Inside the code
 
 # Folder Structure:
 
-## code:
+## [code](/code):
 > The folder contains all neccessary code, scripts, and modules to create vector stores, load LLMs and embedding models, and create a simple Gradio interface to test things oute
 
-## data: 
+## [data](/data): 
 > The data folder contains any neccessary data files and pdfs for vectorization and testing.
 
-## slides:
+## [slides](/slides):
 > This folder contains any slide decks generated to support this project
