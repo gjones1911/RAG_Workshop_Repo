@@ -3051,7 +3051,7 @@ class RAGWorkshopUI(BasicGradioAssistant):
         new_vs_name = self.create_vectorstore_from_pdfs(file.name)
         if new_vs_name not in self.VECTOR_STORE_LIST:
             self.VECTOR_STORE_LIST.append(new_vs_name)
-        return gr.Dropdown.update(choices=self.VECTOR_STORE_LIST, value=new_vs_name), f"Created new store: {new_vs_name}"
+        return gr.update(choices=self.VECTOR_STORE_LIST, value=new_vs_name), f"Created new store: {new_vs_name}"
 
     def update_params(self, chunk_size, k, min_similarity, temperature, top_k, top_p, max_tokens):
         self.chunk_size=chunk_size
