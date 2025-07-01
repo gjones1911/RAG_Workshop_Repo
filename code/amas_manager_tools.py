@@ -290,40 +290,36 @@ class AMAS_Assistant:
             print(f"⚠ Warning: Failed to fetch model config for hidden_size. {ex}")
             self.hidden_size = None  # Default to None if unavailable
     
-        # Attempt remote loading if use_remote=True
-        if use_remote:
-            print(f"Attempting to load remote version of '{model_path}'")
-            try:
-                self.assistant = pipeline(
-                    "text-generation",
-                    model=model_path,
-                    device_map="cpu",  # Remote API does not support GPUs
-                    max_new_tokens=self.max_new_tokens,
-                    tokenizer=self.tokenizer,
-                    torch_dtype=torch_dtype,
-                )
-                print("Pipeline Callable Parameters:", inspect.signature(self.assistant.__call__).parameters.keys())
-                print("Pipeline Model Configuration:", self.assistant.model.config)
-                print(f"✅ Successfully loaded remote version of '{model_path}'")
-                return  # Exit function after successful remote load
-            except Exception as remote_error:
-                print(f"❌ Remote model loading failed: {remote_error}. Falling back to local loading.")
-    
-        # Load model locally if use_remote=False or remote fails
-        print(f"Loading local version of '{model_path}'")
-        
+        print(f"Attempting to load model @: '{model_path}'")
         self.assistant = pipeline(
             "text-generation",
             model=model_path,
+            device_map=self.device_map,  # Remote API does not support GPUs
+            max_new_tokens=self.max_new_tokens,
             tokenizer=self.tokenizer,
-            device_map=device_map or self.device_map,
-            max_new_tokens=max_new_tokens,
             torch_dtype=torch_dtype,
         )
+        print("Pipeline Callable Parameters:", inspect.signature(self.assistant.__call__).parameters.keys())
+        print("Pipeline Model Configuration:", self.assistant.model.config)
+        print(f"✅ Successfully loaded model @: '{model_path}'")
+        # return  # Exit function after successful remote load
     
-        print(f"✅ Pipeline successfully loaded with model: {model_path}")
+        # # Load model locally if use_remote=False or remote fails
+        # print(f"Loading local version of '{model_path}'")
+        
+        # self.assistant = pipeline(
+        #     "text-generation",
+        #     model=model_path,
+        #     tokenizer=self.tokenizer,
+        #     device_map=device_map or self.device_map,
+        #     max_new_tokens=max_new_tokens,
+        #     torch_dtype=torch_dtype,
+        # )
+    
+        # print(f"✅ Pipeline successfully loaded with model: {model_path}")
         if self.hidden_size:
             print(f"\n\n\t\t\tHidden size: {self.hidden_size}\n\n")
+        return
 
 
     def load_peft_pipeline(self, model_path: str, max_new_tokens: int, device_map: str = None,
@@ -338,6 +334,7 @@ class AMAS_Assistant:
         :param torch_dtype: type of torch_dtype to use (default: torch.bfloat16).
         """
         print(f"Loading '{self.load_method}' version of '{model_path}'")
+        print(f"device_map: {device_map}")
         model = AutoPeftModelForCausalLM.from_pretrained(
               model_path,
               device_map=device_map,
@@ -359,13 +356,15 @@ class AMAS_Assistant:
     
 
     def load_model(self, model_path, max_new_tokens: int=None, device_map: str=None, torch_dtype=torch.bfloat16, use_remote: bool=False):
+        print(f"Second load model: {device_map}")
         if device_map:
             if device_map == "most_free":
                 best_gpu, max_mem = get_gpu_with_most_free_memory()
                 print(f"\n\n\n\n\t\t\tAssigning model to GPU {best_gpu} with {max_mem / (1024**3):.2f} GB free memory.\n\n\n\n")
-
+        
                 # Define device_map to use the selected GPU
                 device_map = {"": f"cuda:{best_gpu}"}  # Assign the entire model to the selected GPU
+                self.device_map=device_map
                 self.assigned_gpu = device_map
         
         self.load_model_basic(self.load_method, model_path=model_path,
