@@ -59,6 +59,7 @@ class AMAS_Assistant:
         #####################################
         self.torch_dtype=torch_dtype
         # self.device_map =  "balanced" if tf.config.list_physical_devices('GPU') else 'auto'
+        self.device_map = "auto"
         self.device_map = device_map if device_map == "most_free" else self.device_map
         self.assigned_gpu = ""
         
